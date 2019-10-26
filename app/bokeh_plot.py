@@ -9,15 +9,17 @@ from bokeh.layouts import row, column
 from bokeh.layouts import widgetbox
 from bokeh.models import Slider, Select
 from app.Season import Season
+from bokeh.embed import components
 
 from bokeh.server.server import Server
 from tornado.ioloop import IOLoop
+from bokeh.resources import INLINE
 
 
 class BokehPlot:
 
     @classmethod
-    def modify_doc(cls, doc):
+    def modify_doc(cls):
         TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
         season = Season()
         seasons_1990_on = season.seasons_1990_on
@@ -86,7 +88,12 @@ class BokehPlot:
         column1 = column(widgetbox(menu), widgetbox(slider), widgetbox(x_axis_menu), widgetbox(y_axis_menu))
         layout = row(column1, p1)
 
-        doc.add_root(layout)
+
+        resources = INLINE.render()
+
+        script, div = components({'p': p1})
+
+        return {'script': script, 'div': div, 'resources': resources}
 
         def callback(attr, old, new):
             if menu.value == "ALL":

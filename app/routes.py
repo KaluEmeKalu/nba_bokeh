@@ -21,3 +21,12 @@ def bkapp_page():
     script = server_document('http://localhost:5006/bkapp')
     print(script)
     return render_template("embed.html", script=script, template="Flask")
+
+
+
+@app.route('/test', methods=['GET'])
+def test():
+
+
+    context = BokehPlot.modify_doc()
+    return render_template("embed2.html", **context)
