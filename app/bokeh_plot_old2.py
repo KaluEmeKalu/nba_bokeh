@@ -7,7 +7,7 @@ from bokeh.models import CategoricalColorMapper
 from bokeh.models import HoverTool
 from bokeh.layouts import row, column
 from bokeh.layouts import widgetbox
-from bokeh.models import Slider, Select, CustomJS, CheckboxGroup
+from bokeh.models import Slider, Select, CustomJS
 from app.Season import Season
 from bokeh.embed import components
 
@@ -28,27 +28,18 @@ class BokehPlot:
 
         source = ColumnDataSource(data=data_dict)
 
-
-        years = seasons_1990_on["Year"].unique().tolist()
-        years = ["ALL"] + [str(int(year)) for year in years][::-1]
-
         slider = Slider(title="Year", start=1990, end=2017, step=1, value=2006)
         menu_options_list = ["ALL"] + seasons_1990_on["Tm"].unique().tolist()
         team_menu = Select(options=menu_options_list, value="ALL", title="Team")
         columns = list(seasons_1990_on.columns)
         x_axis_menu = Select(options=columns, value="3PA", title="X Axis")
         y_axis_menu = Select(options=columns, value="3P", title="Y Axis")
-        y_axis_menu = Select(options=columns, value="3P", title="Y Axis")
-        season_menu = Select(options=years, value="ALL", title="Season")
 
         palette = season.get_palette()
         color_mapper = CategoricalColorMapper(
             factors=seasons_1990_on["Tm"].unique().tolist(),
             palette=palette
         )
-        checkbox_group = CheckboxGroup(
-        labels=["All Years"], active=[0])
-
 
         TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
         p1 = figure(
@@ -75,13 +66,8 @@ class BokehPlot:
         #######################
         cls.add_tooltips(p1)
 
-        widgetboxes = [
-            widgetbox(team_menu),
-            widgetbox(season_menu),
-            widgetbox(x_axis_menu),
-            widgetbox(y_axis_menu)
-        ]
-        column1 = column(widgetboxes)
+
+        column1 = column(widgetbox(team_menu), widgetbox(slider), widgetbox(x_axis_menu), widgetbox(y_axis_menu))
         layout = row(column1, p1)
         args = {
             'source': source,
@@ -89,74 +75,21 @@ class BokehPlot:
             'team_menu': team_menu,
             'slider': slider,
             'x_axis_menu': x_axis_menu,
-            'y_axis_menu': y_axis_menu,
-            'season_menu': season_menu
+            'y_axis_menu': y_axis_menu
         }
 
         callback = CustomJS(args=args, code="""
+
             data_copy = JSON.parse(JSON.stringify(data_dict))
             console.log(data_copy, "<-- Here is data copy");
-
-            keys = Object.keys(data_copy)
-            selected_team = team_menu.value
-            selected_season = season_menu.value
-            all_seasons = data_copy['Year']
-            all_teams = data_copy['Tm']
-
-            // remove_row removes a row of data
-            // for all lists.
-            function remove_row(index) {
-                for (j = 0; j < keys.length; j++) {
-                    column = data_copy[keys[j]]
-                    value = column[index]
-                    data_copy[keys[j]].splice(index, 1)
-                }
-            }
-
-            // Filter Year
-            if (selected_season !== "ALL") {
-
-                for (var i = all_seasons.length - 1; i >= 0; i--) {
-                    season = all_seasons[i];
-                    if (season != selected_season) { 
-                        remove_row(i)
-                    }
-                }
-
-            }
-
-            // Filter Team
-            if (selected_team !== "ALL") {
-                for (var i = all_teams.length - 1; i >= 0; i--) {
-                    team_name = all_teams[i];
-                    if (team_name !== selected_team) { 
-                        remove_row(i)
-                    }
-                }
-                console.log(data_copy['Tm'].length, "<--- End Length")
-            }
-
-
-            console.log("Here are the keys -->", keys)
-            console.log("Here are team menu -->", team_menu)
-            console.log("Here are slider  -->", slider)
-            console.log("Here are x_axis_menu menu -->", x_axis_menu)
-            console.log("Here are y_axis_menu menu -->", y_axis_menu)
-
-
-            if (team_menu.value === "ALL") {    
+            if (team_menu.value === "ALL") {
                 console.log("What's up. I am ALL");
-
             }
-            source.data = data_copy
+
             source.change.emit();
         """)
 
         x_axis_menu.js_on_change('value', callback)
-        y_axis_menu.js_on_change('value', callback)
-        slider.js_on_change('value', callback)
-        team_menu.js_on_change('value', callback)
-        season_menu.js_on_change('value', callback)
 
 
         resources = INLINE.render()
