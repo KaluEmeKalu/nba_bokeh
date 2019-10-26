@@ -14,6 +14,7 @@ from bokeh.embed import components
 from bokeh.server.server import Server
 from tornado.ioloop import IOLoop
 from bokeh.resources import INLINE
+from bokeh.models import LinearAxis
 
 
 class BokehPlot:
@@ -41,21 +42,13 @@ class BokehPlot:
         y_axis_menu = Select(options=columns, value="3P", title="Y Axis")
         season_menu = Select(options=years, value="ALL", title="Season")
 
-        palette = season.get_palette()
-        color_mapper = CategoricalColorMapper(
-            factors=seasons_1990_on["Tm"].unique().tolist(),
-            palette=palette
-        )
-        checkbox_group = CheckboxGroup(
-        labels=["All Years"], active=[0])
-
-
         TOOLS = "pan,wheel_zoom,box_zoom,reset,save"
         p1 = figure(
-            x_axis_label="3 Points Attempted",
-            y_axis_label="3 Points Made",
             tools=TOOLS
         )
+
+        p1.xaxis.visible = None
+        p1.yaxis.visible = None
 
         ###################
         p1.circle(
@@ -83,6 +76,13 @@ class BokehPlot:
         ]
         column1 = column(widgetboxes)
         layout = row(column1, p1)
+
+        xaxis = LinearAxis(axis_label="3 Pointers Attempted")
+        yaxis = LinearAxis(axis_label="3 Pointers Made")
+        p1.add_layout(xaxis, 'below')
+        p1.add_layout(yaxis, 'left')
+
+
         args = {
             'source': source,
             'data_dict': data_dict,
@@ -90,12 +90,17 @@ class BokehPlot:
             'slider': slider,
             'x_axis_menu': x_axis_menu,
             'y_axis_menu': y_axis_menu,
-            'season_menu': season_menu
+            'season_menu': season_menu,
+            'p': p1,
+            'xaxis': xaxis,
+            'yaxis': yaxis,
+
         }
 
         callback = CustomJS(args=args, code="""
             data_copy = JSON.parse(JSON.stringify(data_dict))
             console.log(data_copy, "<-- Here is data copy");
+            console.log(p)
 
             keys = Object.keys(data_copy)
             selected_team = team_menu.value
@@ -148,7 +153,19 @@ class BokehPlot:
                 console.log("What's up. I am ALL");
 
             }
+
+
+            data_copy['X'] = data_copy[x_axis_menu.value]
+            data_copy['Y'] = data_copy[y_axis_menu.value]
             source.data = data_copy
+
+            xaxis.attributes.axis_label = x_axis_menu.value
+            yaxis.attributes.axis_label = y_axis_menu.value
+            xaxis.change.emit();
+            yaxis.change.emit();
+
+
+
             source.change.emit();
         """)
 
