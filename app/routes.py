@@ -10,7 +10,7 @@ from app.bokeh_plot import BokehPlot
 
 
 
-@app.route('/', methods=['GET'])
+@app.route('/test', methods=['GET'])
 def bkapp_page():
     from threading import Thread
     try:
@@ -24,7 +24,7 @@ def bkapp_page():
 
 
 
-@app.route('/test', methods=['GET'])
+@app.route('/', methods=['GET'])
 def test():
     context = BokehPlot.modify_doc()
     return render_template("embed2.html", **context)
