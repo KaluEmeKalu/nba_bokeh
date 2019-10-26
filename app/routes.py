@@ -26,7 +26,5 @@ def bkapp_page():
 
 @app.route('/test', methods=['GET'])
 def test():
-
-
     context = BokehPlot.modify_doc()
     return render_template("embed2.html", **context)

@@ -7,7 +7,7 @@ from bokeh.models import CategoricalColorMapper
 from bokeh.models import HoverTool
 from bokeh.layouts import row, column
 from bokeh.layouts import widgetbox
-from bokeh.models import Slider, Select
+from bokeh.models import Slider, Select, CustomJS
 from app.Season import Season
 from bokeh.embed import components
 
@@ -24,31 +24,13 @@ class BokehPlot:
         season = Season()
         seasons_1990_on = season.seasons_1990_on
 
-        source = ColumnDataSource(
-            data={
-                "x_3p": seasons_1990_on["3PA"],
-                "y_3p": seasons_1990_on["3P"],
-                "Tm": seasons_1990_on["Tm"],
-                "x_2p": seasons_1990_on["2PA"],
-                "y_2p": seasons_1990_on["2P"],
-                "Year": seasons_1990_on["Year"],
-                "Player": seasons_1990_on["Player"],
-                "3PG": seasons_1990_on["3P%"],
-            }
-        )
-        seasons_1990_on['3PG'] = seasons_1990_on['3P%']
-        seasons_1990_on['2PG'] = seasons_1990_on['2P%']
+        data_dict = seasons_1990_on.to_dict('list')
 
-
-        x = seasons_1990_on['3PA']
-        y = seasons_1990_on['3P']
-        seasons_1990_on['X'] = seasons_1990_on['3PA']
-        seasons_1990_on['Y'] = seasons_1990_on['3P']
-        source = ColumnDataSource(data=seasons_1990_on)
+        source = ColumnDataSource(data=data_dict)
 
         slider = Slider(title="Year", start=1990, end=2017, step=1, value=2006)
         menu_options_list = ["ALL"] + seasons_1990_on["Tm"].unique().tolist()
-        menu = Select(options=menu_options_list, value="ALL", title="Team")
+        team_menu = Select(options=menu_options_list, value="ALL", title="Team")
         columns = list(seasons_1990_on.columns)
         x_axis_menu = Select(options=columns, value="3PA", title="X Axis")
         y_axis_menu = Select(options=columns, value="3P", title="Y Axis")
@@ -85,13 +67,34 @@ class BokehPlot:
         cls.add_tooltips(p1)
 
 
-        column1 = column(widgetbox(menu), widgetbox(slider), widgetbox(x_axis_menu), widgetbox(y_axis_menu))
+        column1 = column(widgetbox(team_menu), widgetbox(slider), widgetbox(x_axis_menu), widgetbox(y_axis_menu))
         layout = row(column1, p1)
+        args = {
+            'source': source,
+            'data_dict': data_dict,
+            'team_menu': team_menu,
+            'slider': slider,
+            'x_axis_menu': x_axis_menu,
+            'y_axis_menu': y_axis_menu
+        }
+
+        callback = CustomJS(args=args, code="""
+
+            data_copy = JSON.parse(JSON.stringify(data_dict))
+            console.log(data_copy, "<-- Here is data copy");
+            if (team_menu.value === "ALL") {
+                console.log("What's up. I am ALL");
+            }
+
+            source.change.emit();
+        """)
+
+        x_axis_menu.js_on_change('value', callback)
 
 
         resources = INLINE.render()
 
-        script, div = components({'p': p1})
+        script, div = components({'p': layout})
 
         return {'script': script, 'div': div, 'resources': resources}
 

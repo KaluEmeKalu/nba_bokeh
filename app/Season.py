@@ -67,6 +67,14 @@ class Season:
 
         new_index = np.arange(0, len(seasons_1990_on)).tolist()
         seasons_1990_on.index = new_index
+
+        seasons_1990_on['3PG'] = seasons_1990_on['3P%']
+        seasons_1990_on['2PG'] = seasons_1990_on['2P%']
+        seasons_1990_on['X'] = seasons_1990_on['3PA']
+        seasons_1990_on['Y'] = seasons_1990_on['3P']
+        seasons_1990_on.drop(axis=1, columns=['blanl', 'blank2'], inplace=True)
+        seasons_1990_on.dropna(inplace=True)
+
         return seasons_1990_on
 
     @staticmethod
