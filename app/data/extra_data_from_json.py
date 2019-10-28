@@ -17,3 +17,4 @@ def get_data(filename="app/data/nba2018-2019.json"):
 
     df = pd.DataFrame.from_dict(data)
     return df
+ 

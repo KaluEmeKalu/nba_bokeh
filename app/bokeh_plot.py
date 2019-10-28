@@ -50,6 +50,7 @@ class BokehPlot:
         p1.xaxis.visible = None
         p1.yaxis.visible = None
 
+
         ###################
         p1.circle(
             "X",
@@ -66,7 +67,7 @@ class BokehPlot:
 
 
         #######################
-        cls.add_tooltips(p1)
+        cls.add_tooltips(p1, x_label='3PA', y_label='3P')
 
         widgetboxes = [
             widgetbox(team_menu),
@@ -94,19 +95,36 @@ class BokehPlot:
             'p': p1,
             'xaxis': xaxis,
             'yaxis': yaxis,
+            'hover': p1.hover,
 
         }
 
         callback = CustomJS(args=args, code="""
             data_copy = JSON.parse(JSON.stringify(data_dict))
             console.log(data_copy, "<-- Here is data copy");
-            console.log(p)
+            console.log(p, "<--- Here is the plot")
+            console.log(hover, "<--- Here is the hover")
 
             keys = Object.keys(data_copy)
             selected_team = team_menu.value
             selected_season = season_menu.value
             all_seasons = data_copy['Year']
             all_teams = data_copy['Tm']
+
+            x_axis_menu.value
+            y_hover = '@' + y_axis_menu.value
+            x_hover = '@' + x_axis_menu.value
+            console.log(y_hover);
+            console.log(x_hover);
+
+            hover[0].tooltips = [
+                ['Player', '@Player'],
+                ['Team', '@Tm'],
+                ['Position', '@Pos'],
+                ['Year', '@Year'],
+                [x_axis_menu.value, x_hover],
+                [y_axis_menu.value, y_hover],
+            ]
 
             // remove_row removes a row of data
             // for all lists.
@@ -154,7 +172,7 @@ class BokehPlot:
 
             }
 
-
+            // Add X & Y
             data_copy['X'] = data_copy[x_axis_menu.value]
             data_copy['Y'] = data_copy[y_axis_menu.value]
             source.data = data_copy
@@ -225,12 +243,15 @@ class BokehPlot:
         y_axis_menu.on_change("value", callback)
 
     @staticmethod
-    def add_tooltips(plot, tooltips=False):
+    def add_tooltips(plot, x_label, y_label, tooltips=False):
         if not tooltips:
             tooltips = [
                 ("Player", "@Player"),
-                ("X", "@X"),
-                ("Y", "@Y"),
+                ("Team", "@Tm"),
+                ("Position", "@Pos"),
+                ("Year", "@Year"),
+                (x_label, "@{}".format(x_label)),
+                (y_label, "@{}".format(y_label)),
             ]
 
         hover1 = HoverTool(tooltips=tooltips)
